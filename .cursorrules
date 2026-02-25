@@ -1,0 +1,33 @@
+# Stackout AI 开发规范
+
+你现在作为一个资深前端架构师，协助我开发 Stackout AI 项目。请遵循以下规则：
+
+## 1. 技术栈选型要求
+- 核心：Vue 3 (Composition API, <script setup>), TypeScript 5.x.
+- 样式：Tailwind CSS v3 (优先使用原生类，减少自定义 CSS).
+- 工具：markdown-it 渲染, highlight.js 代码高亮.
+
+## 2. 代码质量与规范
+- **简洁性**：优先编写组合式函数 (Composables) 来逻辑复用，保持组件逻辑简洁。
+- **类型安全**：所有定义必须有明确的 TypeScript 类型接口 (interface)，禁止使用 `any`。
+- **UI 风格**：遵循 Slate/Indigo 深色主题，使用 Tailwind 的响应式类确保移动端适配。
+- **性能**：在处理长对话或流式输出时，注意 DOM 更新性能与滚动位置的平滑处理。
+
+## 3. 组件开发规范
+- 新组件应放在 `src/components/` 下。
+- 组件命名使用大驼峰 (PascalCase)，如 `ChatContainer.vue`。
+- 遵循单一职责原则，App.vue 仅作为布局入口，逻辑应下沉。
+
+## 4. API 与 Worker 交互
+- 所有请求通过 Cloudflare Worker 中转，不要直接请求第三方 API 域名。
+- 处理 Stream 流式响应时，确保 TextDecoder 和循环读取逻辑的健壮性。
+
+## 5. 交互建议
+- 当我要求增加功能时，请先思考是否需要引入 Pinia 或抽离 Composables。
+- 在修改 `App.vue` 时，主动建议我如何进行组件化重构。
+## 6. 任务管理协议 (DEVELOPMENT_LOG.md)
+- **读取上下文**：在开始任何编码任务前，优先读取 `DEVELOPMENT_LOG.md` 了解当前的开发阶段和今日任务。
+- **自动更新建议**：当我完成一个功能后，主动提醒我更新 `DEVELOPMENT_LOG.md` 中的状态。
+- **排期建议**：如果我提出的新功能过于复杂，主动建议我将其记录在 "Ideas Pool" 中，并协助我拆解成可执行的每日任务。
+- **每日交接**：在对话结束或任务切换时，如果我有未完成的任务，提醒我将其标记为 `[>]` 并顺延。
+- **Ideas Pool 收敛**：当 Ideas Pool 中的某个想法已经被排期并在某日任务中标记为完成（`[√]`）后，应从 Ideas Pool 中移除该条目，避免重复。
