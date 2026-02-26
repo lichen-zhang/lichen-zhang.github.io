@@ -6,11 +6,15 @@
       :is-sidebar-open="isSidebarOpen"
       :conversations="conversations"
       :current-conversation-id="currentConversationId"
+      :current-user="authUser"
+      :is-authenticated="isAuthenticated"
       @switch-persona="switchPersona"
       @clear-chat="clearChat"
-      @create-conversation="createConversation"
-      @switch-conversation="switchConversationById"
-      @delete-conversation="deleteConversationById"
+      @create-conversation="handleCreateConversation"
+      @switch-conversation="handleSwitchConversation"
+      @delete-conversation="handleDeleteConversation"
+      @open-login="showLogin = true"
+      @logout="handleLogout"
     />
 
     <main class="flex-1 flex flex-col relative w-full h-full bg-slate-950">
@@ -86,6 +90,7 @@
           <div class="absolute top-2 left-2 z-10">
             <select
               v-model="currentModel"
+              :disabled="!isAdmin"
               class="bg-slate-800/80 hover:bg-slate-800 text-xs text-indigo-300 border border-slate-700/50 rounded-lg px-2 py-1 pr-6 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none transition-colors font-mono"
             >
               <option value="deepseek-chat">DeepSeek-V3 (Chat)</option>
@@ -106,6 +111,9 @@
               </svg>
             </div>
           </div>
+          <p v-if="!isAdmin" class="absolute top-2 right-3 text-[10px] text-slate-500">
+            模型切换仅管理员可用，请使用 admin 登录。
+          </p>
 
           <textarea
             v-model="inputContent"
@@ -131,13 +139,26 @@
         </p>
       </div>
     </main>
+    <LoginModal
+      v-model:username="loginUsername"
+      v-model:password="loginPassword"
+      :visible="showLogin"
+      :pending="authLoading"
+      :error-message="authError"
+      @close="showLogin = false"
+      @submit="handleLoginSubmit"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 // @ts-ignore 由构建工具处理 Vue SFC 默认导出
 import Sidebar from './components/Sidebar.vue'
+// @ts-ignore 由构建工具处理 Vue SFC 默认导出
+import LoginModal from './components/LoginModal.vue'
 import { useChat } from './composables/useChat'
+import { useAuth } from './composables/useAuth'
 
 const {
   conversations,
@@ -161,6 +182,42 @@ const {
   switchConversationById,
   deleteConversationById,
 } = useChat()
+
+const { authUser, authLoading, authError, isAuthenticated, role, login, logout } = useAuth()
+
+const showLogin = ref(false)
+const loginUsername = ref('')
+const loginPassword = ref('')
+
+const isAdmin = computed(() => role.value === 'admin')
+
+const handleCreateConversation = () => {
+  createConversation()
+}
+
+const handleSwitchConversation = (id: string) => {
+  switchConversationById(id)
+}
+
+const handleDeleteConversation = (id: string) => {
+  if (!isAuthenticated.value || (role.value !== 'admin' && role.value !== 'user')) {
+    alert('当前角色无权删除会话，请先登录。')
+    return
+  }
+  deleteConversationById(id)
+}
+
+const handleLoginSubmit = async (payload: { username: string; password: string }) => {
+  const result = await login(payload.username, payload.password)
+  if (result.ok) {
+    showLogin.value = false
+    loginPassword.value = ''
+  }
+}
+
+const handleLogout = () => {
+  logout()
+}
 </script>
 <style>
 ::-webkit-scrollbar {

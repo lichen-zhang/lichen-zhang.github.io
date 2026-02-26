@@ -1,0 +1,8 @@
+name = "stackout-ai-backend"
+main = "worker.js" # 或者是你 src 下的入口文件
+compatibility_date = "2024-03-21"
+
+[[d1_databases]]
+binding = "DB" # 在代码中通过 env.DB 访问
+database_name = "stackout-db"
+database_id = "319a99c7-726d-498a-a6ef-8a7968e83582"

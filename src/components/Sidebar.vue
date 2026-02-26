@@ -66,6 +66,31 @@
     </div>
 
     <div class="p-4 bg-slate-900/50 border-t border-slate-800 space-y-2">
+      <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+        <div class="flex flex-col">
+          <span class="font-medium text-slate-200">
+            {{ isAuthenticated ? currentUser?.displayName || currentUser?.username : '未登录' }}
+          </span>
+          <span class="text-[10px] text-slate-500">
+            角色：{{ isAuthenticated ? currentUser?.role : 'guest' }}
+          </span>
+        </div>
+        <button
+          v-if="!isAuthenticated"
+          class="px-2 py-1 rounded-md border border-indigo-500/60 text-indigo-300 hover:bg-indigo-600/20"
+          @click="onOpenLogin"
+        >
+          登录
+        </button>
+        <button
+          v-else
+          class="px-2 py-1 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700/80"
+          @click="onLogout"
+        >
+          退出
+        </button>
+      </div>
+
       <button
         @click="onClearChat"
         class="w-full flex items-center justify-center gap-2 text-xs text-slate-400 hover:text-red-400 transition-colors py-2 border border-slate-700 rounded-md hover:border-red-900 hover:bg-red-900/10"
@@ -79,6 +104,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import type { Persona, Conversation } from '../composables/useChat'
+import type { AuthUser } from '../composables/useAuth'
 
 export default defineComponent({
   name: 'Sidebar',
@@ -104,6 +130,16 @@ export default defineComponent({
       required: false,
       default: null,
     },
+    currentUser: {
+      type: Object as () => AuthUser | null,
+      required: false,
+      default: null,
+    },
+    isAuthenticated: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   emits: [
     'switch-persona',
@@ -111,6 +147,8 @@ export default defineComponent({
     'create-conversation',
     'switch-conversation',
     'delete-conversation',
+    'open-login',
+    'logout',
   ],
   methods: {
     onSwitchPersona(persona: Persona) {
@@ -129,6 +167,12 @@ export default defineComponent({
       if (confirm('确定要删除该会话吗？此操作不可恢复。')) {
         this.$emit('delete-conversation', id)
       }
+    },
+    onOpenLogin() {
+      this.$emit('open-login')
+    },
+    onLogout() {
+      this.$emit('logout')
     },
     formatTime(timestamp: number) {
       if (!timestamp) return ''
