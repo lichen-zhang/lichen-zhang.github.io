@@ -1,170 +1,178 @@
+# RedNote AI Writer
 
-```markdown
-# Stackout AI
+面向中国市场的小红书 AI 内容生成 SaaS。核心链路：
 
-![Vue](https://img.shields.io/badge/Vue.js-3.x-4FC08D?logo=vue.js&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.x-38B2AC?logo=tailwindcss&logoColor=white)
-![Cloudflare](https://img.shields.io/badge/Cloudflare-Workers_%26_Pages-F38020?logo=cloudflare&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+1. 输入主题/账号类型/风格/长度
+2. 生成 10 个选题
+3. 选择一个选题生成正文
+4. 根据正文生成 10 个标题
+5. 保存历史记录
+6. 免费额度 + 微信支付订阅
 
-> **A production-grade, secure, and responsive AI chat application built with modern web technologies.**
->
-> **Stackout AI** 是一个基于 Vue 3 生态构建的现代化 AI 对话客户端。它采用 Serverless 架构，通过边缘计算解决 API 密钥安全与跨域访问问题，提供媲美原生应用的交互体验。
+## 项目拆分
 
----
+本仓库包含 3 个可独立部署的项目：
 
-## ✨ Features (核心特性)
+1. Web + 业务 Worker（当前目录）
+2. 邮箱验证码后端（`email-auth-backend/`）
+3. 网关 Worker（`worker.ts`，用于 `api.stackout.work`）
 
-- **🎭 Persona System (多角色预设)**: 内置“前端架构师”、“翻译专家”等多种 System Prompts，支持上下文记忆与角色切换。
-- **🔒 Secure Architecture (安全架构)**: 采用 **Cloudflare Workers** 作为 BFF (Backend for Frontend) 层，API Key 存储于边缘节点环境变量中，彻底杜绝前端 Key 泄露风险。
-- **📝 Rich Text Rendering (富文本渲染)**: 集成 `markdown-it` 与 `highlight.js`，配合 Tailwind Typography，完美支持代码高亮、表格、公式及 Markdown 排版。
-- **⚡ High Performance (极致性能)**: 基于 Vite 构建，配合 `pnpm` 依赖管理。深度优化的 VS Code 配置与 ESLint/Prettier 策略，确保开发体验流畅。
-- **🎨 Modern UI/UX**: 全深度定制的 Tailwind CSS 深色模式 (Slate/Indigo 主题)，适配移动端侧边栏与桌面端布局。
-- **🚀 Global Access**: 支持 Cloudflare 自定义域名 (Custom Domains) 绑定，确保全球（包括国内）直连访问，无惧网络阻断。
+对应文档：
 
----
+- 主项目说明：当前文件
+- 业务 Worker 说明：`worker/README.md`
+- 邮箱后端说明：`../email-auth-backend/README.md`
+- 网关 Worker 说明：`../docs/网关服务说明.md`
+- 一体化部署操作说明书：`../docs/部署操作手册.md`
+- 上线前勾选清单：`../docs/上线核对清单.md`
+- 商业研究与增长策略：`../docs/商业研讨报告.md`
+- 产品需求说明：`../docs/产品需求说明书.md`
 
-## 🏗 Architecture (架构设计)
+## 技术栈
 
-本项目采用了 **Serverless Edge Proxy** 模式，利用 Cloudflare 的边缘能力实现轻量级后端。
+- Frontend: Vue 3 + Vite + TypeScript + Pinia + Vue Router + TailwindCSS + Axios
+- Backend: Cloudflare Workers + TypeScript
+- Database: Cloudflare D1
+- AI: Kimi（选题/正文/标题）
 
-```mermaid
-graph LR
-    User[User / Browser] -->|HTTPS| CF[Cloudflare Custom Domain]
-    subgraph Cloudflare Ecosystem
-        CF -->|Static Assets| Pages[Cloudflare Pages (Vue 3 Dist)]
-        CF -->|/chat/completions| Worker[Cloudflare Worker]
-    end
-    subgraph External Services
-        Worker -->|Auth Injection| DS[DeepSeek API / OpenAI]
-    end
+## 页面路由
 
-```
+- `/` 首页
+- `/login` 登录页
+- `/dashboard` 主工作台
+- `/history` 历史记录页
+- `/pricing` 套餐页
+- `/account` 账户页
 
-1. **Static Hosting**: 前端资源托管于 **Cloudflare Pages**，实现全球 CDN 加速。
-2. **Edge Worker**: **Cloudflare Workers** 负责请求拦截、CORS 白名单校验及 API Key 注入。
-3. **Security**: 前端只负责 UI 交互，不接触敏感凭证；所有鉴权在 Edge 端完成。
+## API
 
----
+业务 Worker 对外 API（`/api/*`）：
 
-## 🛠 Tech Stack (技术栈)
+- `POST /api/auth/send-code`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `POST /api/generate/topics`
+- `POST /api/generate/article`
+- `POST /api/generate/titles`
+- `GET /api/history`
+- `GET /api/history/:id`
+- `POST /api/payment/create`
+- `POST /api/payment/callback`
+- `GET /api/orders`
 
-* **Core Framework**: Vue 3 (Composition API, `<script setup>`)
-* **Language**: TypeScript
-* **Styling**: Tailwind CSS v3, PostCSS
-* **Build Tool**: Vite
-* **Package Manager**: pnpm
-* **Utilities**:
-* `markdown-it` (Markdown Parser)
-* `highlight.js` (Syntax Highlighting)
-* `@tailwindcss/typography` (Prose Styling)
+网关 Worker API（`/v1/*`，`api.stackout.work`）：
 
-* **Infrastructure**: Cloudflare Pages + Workers
+- `GET /v1/models`
+- `POST /v1/chat/completions`
 
----
+## 数据表
 
-## 🚀 Getting Started (快速开始)
+- `users`
+- `auth_codes`
+- `generations`
+- `orders`
+- `subscriptions_log`
 
-### Prerequisites
+认证说明：
 
-* Node.js >= 18
-* pnpm >= 8
+- 登录改为邮箱验证码。
+- 前端请求 Worker 的 `/api/auth/send-code` 与 `/api/auth/login`。
+- Worker 通过 `EMAIL_AUTH_BASE_URL` 代理独立邮箱服务完成验证码发送与校验。
 
-### Local Development
-
-1. **Clone the repository**
-
-```bash
-git clone [https://github.com/lichen-zhang/stackout-ai.git](https://github.com/lichen-zhang/stackout-ai.git)
-cd stackout-ai
-
-```
-
-1. **Install dependencies**
+## 本地开发
 
 ```bash
 pnpm install
-
+pnpm wrangler d1 execute xhs-writer-db --file=schema.sql
+pnpm wrangler d1 execute xhs-writer-db --file=migrations/20260319_add_email_columns.sql
+pnpm dev:worker
+pnpm dev
 ```
 
-1. **Setup Local Proxy**
-Since the backend uses Cloudflare Workers, we use Vite's proxy for local dev. Ensure `vite.config.ts` points to your worker:
-
-```typescript
-// vite.config.ts
-server: {
-  proxy: {
-    '/chat': {
-      target: '[https://api.stackout.work](https://api.stackout.work)', // Replace with your Worker URL
-      changeOrigin: true,
-      secure: true,
-    }
-  }
-}
-
-```
-
-1. **Run Development Server**
+一键启动联调（前端 + Worker + 独立后端 + 本地 SMTP）：
 
 ```bash
-pnpm dev
-
+pnpm run dev:all
 ```
 
----
+说明：首次使用请先进入 `../email-auth-backend` 完成依赖安装并按 `../email-auth-backend/README.md` 配置 `.env`。
 
-## 📦 Deployment (部署指南)
+## 环境变量（Worker）
 
-### Step 1: Backend (Cloudflare Workers)
+- `JWT_SECRET`
+- `ALLOWED_ORIGINS`
+- `EMAIL_AUTH_BASE_URL`
+- `EMAIL_AUTH_MAX_ATTEMPTS`（可选）
+- `EMAIL_AUTH_TIMEOUT_MS`（可选）
+- `EMAIL_AUTH_RETRY_BASE_DELAY_MS`（可选）
+- `EMAIL_AUTH_CIRCUIT_FAILURE_THRESHOLD`（可选）
+- `EMAIL_AUTH_CIRCUIT_OPEN_MS`（可选）
+- `EXPOSE_DEV_CODE`
+- `AI_GATEWAY_BASE_URL`（可选）
+- `AI_GATEWAY_API_KEY`（可选）
+- `KIMI_API_KEY`
+- `WECHAT_CALLBACK_SECRET`
 
-Deploy the edge worker to handle API requests securely.
+### Cloudflare 部署（使用 api.stackout.work 网关）
 
-1. Create a Worker in Cloudflare Dashboard.
-2. Paste the code from `worker.js` (ensure CORS allows your domains).
-3. **Crucial**: Set `DEEPSEEK_API_KEY` in **Settings -> Variables**.
-4. Bind your custom domain (e.g., `api.stackout.work`) in **Settings -> Domains & Routes**.
+- 网关地址已设为：`https://api.stackout.work`
+- Worker 会调用：`https://api.stackout.work/v1/chat/completions`
 
-### Step 2: Frontend (Cloudflare Pages)
+### 前端直连生成（不走 /api/generate/*）
 
-1. Go to Cloudflare Dashboard -> Workers & Pages -> Create Application -> **Pages**.
-2. **Connect to Git** and select this repository.
-3. Configure build settings:
+当前 Dashboard 的“选题/正文/标题生成”已切换为前端直连：
 
-* **Framework Preset**: Vue
-* **Build command**: `pnpm build`
-* **Build output directory**: `dist`
+- `POST https://api.stackout.work/v1/chat/completions`
+- 不再调用：`/api/generate/topics`、`/api/generate/article`、`/api/generate/titles`
 
-1. Click **Deploy**.
-2. Once deployed, go to **Custom domains** and bind your main domain (e.g., `stackout.work`).
+前端需要配置：
 
----
-
-## 📂 Project Structure
-
-```text
-├── .github/              # GitHub Actions workflows (Optional)
-├── public/               # Static assets (favicon.svg, manifest)
-├── src/
-│   ├── assets/           # Global styles & Highlight.js theme
-│   ├── components/       # Vue Components
-│   ├── App.vue           # Main Application Logic
-│   └── main.ts           # App Entry point
-├── .vscode/              # Optimized VS Code settings (Performance tuning)
-├── index.html            # HTML Entry
-├── tailwind.config.js    # Tailwind configuration
-├── tsconfig.json         # TypeScript configuration
-├── vite.config.ts        # Vite proxy & build config
-└── worker.js             # Edge Worker Source Code (Reference)
-
+```bash
+VITE_AI_GATEWAY_BASE_URL=https://api.stackout.work
+VITE_BIZ_API_BASE_URL=https://biz.stackout.work
 ```
 
----
+其中：
 
-## 📄 License
+- `VITE_AI_GATEWAY_BASE_URL` 仅用于 AI 直连。
+- `VITE_BIZ_API_BASE_URL` 用于登录与全部业务接口（`/api/*`），应指向 Docker 服务器上的独立后端项目。
 
-MIT © [Lichen Zhang](https://www.google.com/search?q=https://github.com/lichen-zhang)
+说明：
 
+- 如果你的 `api.stackout.work/v1/chat/completions` 允许无客户端 Key（由 Worker 内部 Secret 处理上游鉴权），前端无需设置 `VITE_AI_GATEWAY_API_KEY`。
+- 只有当网关仍启用 `ensureGatewayAuth` 且要求客户端 Bearer Key 时，才需要额外设置 `VITE_AI_GATEWAY_API_KEY`。
+
+## 部署参考
+
+完整部署步骤见：`../docs/部署操作手册.md`
+
+如果要做商业可行性和增长策略评估，见：`../docs/商业研讨报告.md`
+
+建议在 Cloudflare 中设置以下 Secret（生产）：
+
+```bash
+pnpm wrangler secret put AI_GATEWAY_API_KEY
+pnpm wrangler secret put KIMI_API_KEY
+pnpm wrangler secret put JWT_SECRET
+pnpm wrangler secret put WECHAT_CALLBACK_SECRET
 ```
 
+本地开发可使用 `.dev.vars`，不要将生产密钥写回仓库：
+
+```bash
+AI_GATEWAY_BASE_URL=https://api.stackout.work
+AI_GATEWAY_API_KEY=your_gateway_key
+KIMI_API_KEY=your_kimi_key
+JWT_SECRET=your_jwt_secret
+WECHAT_CALLBACK_SECRET=your_callback_secret
 ```
+
+## 最小联调脚本
+
+```bash
+TEST_EMAIL=you@example.com pnpm run smoke:email-auth
+```
+
+- 可选：`WORKER_BASE_URL`（默认 `https://biz.stackout.work`）
+- 可选：`EMAIL_AUTH_BASE_URL`（默认 `https://mail.stackout.work`）
+- 可选：`TEST_CODE`（未提供时会优先使用 send-code 返回的 `debugCode`）

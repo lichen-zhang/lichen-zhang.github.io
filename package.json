@@ -1,5 +1,5 @@
 {
-  "name": "stackout-ai",
+  "name": "xhs-writer",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -8,22 +8,28 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:all": "run-p dev dev:worker dev:email-auth dev:email-smtp",
+    "dev:email-auth": "npm --prefix email-auth-backend run dev",
+    "dev:email-smtp": "npm --prefix email-auth-backend run dev:smtp",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix --cache",
-    "format": "prettier --write --experimental-cli src/"
+    "format": "prettier --write --experimental-cli src/",
+    "dev:worker": "wrangler dev worker.ts --local",
+    "smoke:email-auth": "node scripts/email-auth-smoke.mjs"
   },
   "dependencies": {
-    "@tailwindcss/typography": "^0.5.19",
-    "highlight.js": "^11.11.1",
-    "markdown-it": "^14.1.0",
-    "vue": "^3.5.26"
+    "@vueup/vue-quill": "^1.2.0",
+    "axios": "^1.12.2",
+    "pinia": "^3.0.3",
+    "quill": "^2.0.3",
+    "vue": "^3.5.26",
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.3",
-    "@types/markdown-it": "^14.1.2",
     "@types/node": "^24.10.4",
     "@vitejs/plugin-vue": "^6.0.3",
     "@vue/eslint-config-prettier": "^10.2.0",
@@ -39,7 +45,6 @@
     "tailwindcss": "^3.4.19",
     "typescript": "~5.9.3",
     "vite": "^7.3.0",
-    "vite-plugin-vue-devtools": "^8.0.5",
     "vue-tsc": "^3.2.2",
     "wrangler": "^4.68.1"
   }

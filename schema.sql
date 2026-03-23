@@ -1,16 +1,66 @@
--- schema.sql
-
--- 1. 创建用户表
 CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  username TEXT UNIQUE NOT NULL,
-  password_hash TEXT NOT NULL,
-  display_name TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE,
+  phone TEXT UNIQUE,
+  nickname TEXT,
+  avatar TEXT,
+  status TEXT NOT NULL DEFAULT 'active',
+  plan_type TEXT NOT NULL DEFAULT 'free',
+  plan_expire_at TEXT,
+  quota_left INTEGER NOT NULL DEFAULT 3,
+  last_quota_reset_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 );
 
--- 2. 插入预存用户
--- 注意：实际开发中 password_hash 应该是加盐哈希后的值
--- 这里先存入一个演示用的哈希（对应明文可能是 'admin123'）
-INSERT INTO users (username, password_hash, display_name) 
-VALUES ('admin', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', 'Stackout管理员');
+CREATE TABLE IF NOT EXISTS auth_codes (
+  id TEXT PRIMARY KEY,
+  phone TEXT NOT NULL,
+  code TEXT NOT NULL,
+  expired_at TEXT NOT NULL,
+  used INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS generations (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  type TEXT NOT NULL,
+  input_payload TEXT NOT NULL,
+  output_payload TEXT NOT NULL,
+  model_name TEXT NOT NULL,
+  prompt_version TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  plan_code TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'CNY',
+  status TEXT NOT NULL,
+  wx_order_no TEXT,
+  paid_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS subscriptions_log (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  plan_type TEXT NOT NULL,
+  expire_at TEXT,
+  source_order_id TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_auth_codes_phone ON auth_codes(phone, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_generations_user_created ON generations(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_user_created ON orders(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_wx_order_no ON orders(wx_order_no);
