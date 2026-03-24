@@ -16,7 +16,33 @@ function buildFallbackTargetUrl(requestUrl: URL, env: Env): string | null {
   return `${base}${mappedPath}${requestUrl.search}`
 }
 
-async function forwardRequest(request: Request, requestUrl: URL, targetUrl: string): Promise<Response> {
+function buildHttpDowngradeUrl(targetUrl: string): string | null {
+  if (!targetUrl.startsWith('https://')) return null
+  return targetUrl.replace(/^https:/, 'http:')
+}
+
+function shouldRetryByStatus(status: number): boolean {
+  return status === 525 || status === 526
+}
+
+function uniqueTargets(targets: Array<string | null | undefined>): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const item of targets) {
+    if (!item) continue
+    if (seen.has(item)) continue
+    seen.add(item)
+    result.push(item)
+  }
+  return result
+}
+
+async function forwardRequest(
+  request: Request,
+  requestUrl: URL,
+  targetUrl: string,
+  bodyBuffer?: ArrayBuffer,
+): Promise<Response> {
   const headers = new Headers(request.headers)
   headers.set('host', new URL(targetUrl).host)
   headers.set('x-forwarded-host', requestUrl.host)
@@ -26,7 +52,7 @@ async function forwardRequest(request: Request, requestUrl: URL, targetUrl: stri
   return fetch(targetUrl, {
     method: request.method,
     headers,
-    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
+    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : bodyBuffer,
     redirect: 'manual',
   })
 }
@@ -47,19 +73,37 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
     })
   }
 
-  let upstreamResponse: Response
-  try {
-    upstreamResponse = await forwardRequest(request, requestUrl, targetUrl)
-  } catch (primaryError) {
-    const fallbackUrl = buildFallbackTargetUrl(requestUrl, env)
-    if (!fallbackUrl) {
-      return new Response(JSON.stringify({ error: 'Biz upstream unreachable', detail: String(primaryError) }), {
-        status: 525,
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      })
-    }
+  const bodyBuffer = request.method === 'GET' || request.method === 'HEAD'
+    ? undefined
+    : await request.arrayBuffer()
 
-    upstreamResponse = await forwardRequest(request, requestUrl, fallbackUrl)
+  const candidateTargets = uniqueTargets([
+    targetUrl,
+    buildFallbackTargetUrl(requestUrl, env),
+    buildHttpDowngradeUrl(targetUrl),
+  ])
+
+  let upstreamResponse: Response | null = null
+  let lastError: unknown = null
+
+  for (const candidate of candidateTargets) {
+    try {
+      const response = await forwardRequest(request, requestUrl, candidate, bodyBuffer)
+      if (shouldRetryByStatus(response.status) && candidate !== candidateTargets[candidateTargets.length - 1]) {
+        continue
+      }
+      upstreamResponse = response
+      break
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  if (!upstreamResponse) {
+    return new Response(JSON.stringify({ error: 'Biz upstream unreachable', detail: String(lastError || 'unknown') }), {
+      status: 525,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    })
   }
 
   const responseHeaders = new Headers(upstreamResponse.headers)
