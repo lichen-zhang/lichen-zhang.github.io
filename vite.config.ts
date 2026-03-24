@@ -25,6 +25,11 @@ export default defineConfig(() => {
           target: proxyTarget,
           changeOrigin: true,
           secure: proxySecure,
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              proxyReq.removeHeader('origin')
+            })
+          },
         },
       },
     },
