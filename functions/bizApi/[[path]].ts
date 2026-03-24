@@ -2,6 +2,7 @@ interface Env {
   BIZ_API_BASE_URL?: string
   BIZ_API_FALLBACK_BASE_URL?: string
   BIZ_API_IP_FALLBACK_BASE_URL?: string
+  BIZ_API_IP_FALLBACK_HOST_HEADER?: string
 }
 
 function buildTargetUrl(requestUrl: URL, env: Env): string {
@@ -19,10 +20,15 @@ function buildFallbackTargetUrl(requestUrl: URL, env: Env): string | null {
 
 function buildIpFallbackTargetUrl(requestUrl: URL, env: Env): string {
   const configured = env.BIZ_API_IP_FALLBACK_BASE_URL
-  if (!configured) return ''
-  const base = configured.replace(/\/$/, '')
+  const base = (configured || 'http://121.37.42.98.nip.io:8080').replace(/\/$/, '')
   const mappedPath = requestUrl.pathname.replace(/^\/bizApi/, '/api')
   return `${base}${mappedPath}${requestUrl.search}`
+}
+
+function getHostOverrideForTarget(targetUrl: string, env: Env): string | null {
+  const ipFallbackBase = (env.BIZ_API_IP_FALLBACK_BASE_URL || 'http://121.37.42.98.nip.io:8080').replace(/\/$/, '')
+  if (!targetUrl.startsWith(ipFallbackBase)) return null
+  return env.BIZ_API_IP_FALLBACK_HOST_HEADER || '121.37.42.98'
 }
 
 function buildHttpDowngradeUrl(targetUrl: string): string | null {
@@ -57,10 +63,11 @@ async function forwardRequest(
   request: Request,
   requestUrl: URL,
   targetUrl: string,
+  hostOverride: string | null,
   bodyBuffer?: ArrayBuffer,
 ): Promise<Response> {
   const headers = new Headers(request.headers)
-  headers.set('host', new URL(targetUrl).host)
+  headers.set('host', hostOverride || new URL(targetUrl).host)
   headers.set('x-forwarded-host', requestUrl.host)
   headers.set('x-forwarded-proto', requestUrl.protocol.replace(':', ''))
   headers.delete('content-length')
@@ -105,7 +112,8 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
 
   for (const candidate of candidateTargets) {
     try {
-      const response = await forwardRequest(request, requestUrl, candidate, bodyBuffer)
+      const hostOverride = getHostOverrideForTarget(candidate, env)
+      const response = await forwardRequest(request, requestUrl, candidate, hostOverride, bodyBuffer)
       if (shouldRetryByResponse(response) && candidate !== candidateTargets[candidateTargets.length - 1]) {
         continue
       }
