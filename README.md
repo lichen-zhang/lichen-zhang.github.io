@@ -11,16 +11,16 @@
 
 ## 项目拆分
 
-本仓库包含 3 个可独立部署的项目：
+当前工作区包含 3 个相关项目：
 
-1. Web + 业务 Worker（当前目录）
+1. Web 前端（当前目录）
 2. 邮箱验证码后端（`email-auth-backend/`）
-3. 网关 Worker（`worker.ts`，用于 `api.stackout.work`）
+3. 网关 Worker（线上由 Cloudflare 官网手工维护，不以本仓库源码为准）
 
 对应文档：
 
 - 主项目说明：当前文件
-- 业务 Worker 说明：`worker/README.md`
+- Cloudflare Worker 线上备份：`../docs/Cloudflare线上Worker备份.md`
 - 邮箱后端说明：`../email-auth-backend/README.md`
 - 网关 Worker 说明：`../docs/网关服务说明.md`
 - 一体化部署操作说明书：`../docs/部署操作手册.md`
@@ -31,8 +31,8 @@
 ## 技术栈
 
 - Frontend: Vue 3 + Vite + TypeScript + Pinia + Vue Router + TailwindCSS + Axios
-- Backend: Cloudflare Workers + TypeScript
-- Database: Cloudflare D1
+- Backend: 独立业务后端 + 邮箱验证码后端
+- Gateway: Cloudflare Worker（线上手工维护）
 - AI: Kimi（选题/正文/标题）
 
 ## 页面路由
@@ -46,7 +46,7 @@
 
 ## API
 
-业务 Worker 对外 API（`/api/*`）：
+业务后端对外 API（`/api/*`）：
 
 - `POST /api/auth/send-code`
 - `POST /api/auth/login`
@@ -76,20 +76,17 @@
 认证说明：
 
 - 登录改为邮箱验证码。
-- 前端请求 Worker 的 `/api/auth/send-code` 与 `/api/auth/login`。
-- Worker 通过 `EMAIL_AUTH_BASE_URL` 代理独立邮箱服务完成验证码发送与校验。
+- 前端请求主站同域 `/api/auth/send-code` 与 `/api/auth/login`。
+- `/api/*` 最终由站点入口层或 Cloudflare 线上 Worker 转发到独立业务后端。
 
 ## 本地开发
 
 ```bash
 pnpm install
-pnpm wrangler d1 execute xhs-writer-db --file=schema.sql
-pnpm wrangler d1 execute xhs-writer-db --file=migrations/20260319_add_email_columns.sql
-pnpm dev:worker
 pnpm dev
 ```
 
-一键启动联调（前端 + Worker + 独立后端 + 本地 SMTP）：
+一键启动联调（前端 + 独立后端 + 本地 SMTP）：
 
 ```bash
 pnpm run dev:all
@@ -97,26 +94,11 @@ pnpm run dev:all
 
 说明：首次使用请先进入 `../email-auth-backend` 完成依赖安装并按 `../email-auth-backend/README.md` 配置 `.env`。
 
-## 环境变量（Worker）
-
-- `JWT_SECRET`
-- `ALLOWED_ORIGINS`
-- `EMAIL_AUTH_BASE_URL`
-- `EMAIL_AUTH_MAX_ATTEMPTS`（可选）
-- `EMAIL_AUTH_TIMEOUT_MS`（可选）
-- `EMAIL_AUTH_RETRY_BASE_DELAY_MS`（可选）
-- `EMAIL_AUTH_CIRCUIT_FAILURE_THRESHOLD`（可选）
-- `EMAIL_AUTH_CIRCUIT_OPEN_MS`（可选）
-- `EXPOSE_DEV_CODE`
-- `AI_GATEWAY_BASE_URL`（可选）
-- `AI_GATEWAY_API_KEY`（可选）
-- `KIMI_API_KEY`
-- `WECHAT_CALLBACK_SECRET`
-
-### Cloudflare 部署（使用 api.stackout.work 网关）
+### Cloudflare 维护说明
 
 - 网关地址已设为：`https://api.stackout.work`
-- Worker 会调用：`https://api.stackout.work/v1/chat/completions`
+- Cloudflare `worker.js` 以官网登录控制台中的手工版本为准。
+- 本仓库不再承载可直接部署的 Worker 源码；仅在 `../docs/Cloudflare线上Worker备份.md` 保留备份。
 
 ### 前端直连生成（不走 /api/generate/*）
 
@@ -149,32 +131,12 @@ VITE_BIZ_API_BASE_URL=https://stackout.work/api
 
 如果要做商业可行性和增长策略评估，见：`../docs/商业研讨报告.md`
 
-建议在 Cloudflare 中设置以下 Secret（生产）：
-
-```bash
-pnpm wrangler secret put AI_GATEWAY_API_KEY
-pnpm wrangler secret put KIMI_API_KEY
-pnpm wrangler secret put JWT_SECRET
-pnpm wrangler secret put WECHAT_CALLBACK_SECRET
-```
-
-本地开发可使用 `.dev.vars`，不要将生产密钥写回仓库：
-
-```bash
-AI_GATEWAY_BASE_URL=https://api.stackout.work
-AI_GATEWAY_API_KEY=your_gateway_key
-KIMI_API_KEY=your_kimi_key
-JWT_SECRET=your_jwt_secret
-WECHAT_CALLBACK_SECRET=your_callback_secret
-```
-
 ## 最小联调脚本
 
 ```bash
 TEST_EMAIL=you@example.com pnpm run smoke:email-auth
 ```
 
-- 可选：`WORKER_BASE_URL`（默认 `https://biz.stackout.work`）
 - 可选：`WORKER_BASE_URL`（默认 `https://stackout.work/api`）
 - 可选：`EMAIL_AUTH_BASE_URL`（默认 `https://mail.stackout.work`）
 - 可选：`TEST_CODE`（未提供时会优先使用 send-code 返回的 `debugCode`）
