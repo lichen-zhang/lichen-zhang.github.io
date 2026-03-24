@@ -1,4 +1,4 @@
-const workerBaseUrl = process.env.WORKER_BASE_URL || process.env.BIZ_BASE_URL || 'https://biz.stackout.work'
+const workerBaseUrl = process.env.WORKER_BASE_URL || process.env.BIZ_BASE_URL || 'https://stackout.work/bizApi'
 const emailAuthBaseUrl = process.env.EMAIL_AUTH_BASE_URL || 'https://mail.stackout.work'
 const testEmail = process.env.TEST_EMAIL || ''
 const testCode = process.env.TEST_CODE || ''
@@ -38,7 +38,7 @@ async function run() {
     console.log(`[smoke:email-auth] Email Auth: ${emailAuthBaseUrl}`)
     console.log(`[smoke:email-auth] Email: ${testEmail}`)
 
-    const sendResult = await requestJson('/api/auth/send-code', {
+    const sendResult = await requestJson('/auth/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -64,7 +64,7 @@ async function run() {
     })
     console.log('[smoke:email-auth] check-code ok:', checkResult)
 
-    const loginResult = await requestJson('/api/auth/login', {
+    const loginResult = await requestJson('/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: testEmail, code: resolvedCode }),
@@ -75,7 +75,7 @@ async function run() {
     }
     console.log('[smoke:email-auth] login ok, token length:', loginResult.token.length)
 
-    const meResult = await requestJson('/api/auth/me', {
+    const meResult = await requestJson('/auth/me', {
         method: 'GET',
         headers: { Authorization: `Bearer ${loginResult.token}` },
     })
