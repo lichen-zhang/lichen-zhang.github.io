@@ -20,13 +20,13 @@ function buildFallbackTargetUrl(requestUrl: URL, env: Env): string | null {
 
 function buildIpFallbackTargetUrl(requestUrl: URL, env: Env): string {
   const configured = env.BIZ_API_IP_FALLBACK_BASE_URL
-  const base = (configured || 'http://121.37.42.98.nip.io:8080').replace(/\/$/, '')
+  const base = (configured || 'http://origin-biz.stackout.work:8080').replace(/\/$/, '')
   const mappedPath = requestUrl.pathname.replace(/^\/bizApi/, '/api')
   return `${base}${mappedPath}${requestUrl.search}`
 }
 
 function getHostOverrideForTarget(targetUrl: string, env: Env): string | null {
-  const ipFallbackBase = (env.BIZ_API_IP_FALLBACK_BASE_URL || 'http://121.37.42.98.nip.io:8080').replace(/\/$/, '')
+  const ipFallbackBase = (env.BIZ_API_IP_FALLBACK_BASE_URL || 'http://origin-biz.stackout.work:8080').replace(/\/$/, '')
   if (!targetUrl.startsWith(ipFallbackBase)) return null
   return env.BIZ_API_IP_FALLBACK_HOST_HEADER || '121.37.42.98'
 }
