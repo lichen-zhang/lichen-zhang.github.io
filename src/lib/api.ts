@@ -4,7 +4,7 @@ const baseURL = import.meta.env.DEV
   ? '/api'
   : import.meta.env.VITE_BIZ_API_BASE_URL ||
     import.meta.env.VITE_API_BASE_URL ||
-    'https://biz.stackout.work/api'
+    '/api'
 
 export const api = axios.create({
   baseURL,
