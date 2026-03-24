@@ -19,7 +19,8 @@ function buildFallbackTargetUrl(requestUrl: URL, env: Env): string | null {
 
 function buildIpFallbackTargetUrl(requestUrl: URL, env: Env): string {
   const configured = env.BIZ_API_IP_FALLBACK_BASE_URL
-  const base = (configured || 'http://121.37.42.98:8080').replace(/\/$/, '')
+  if (!configured) return ''
+  const base = configured.replace(/\/$/, '')
   const mappedPath = requestUrl.pathname.replace(/^\/bizApi/, '/api')
   return `${base}${mappedPath}${requestUrl.search}`
 }
@@ -30,7 +31,7 @@ function buildHttpDowngradeUrl(targetUrl: string): string | null {
 }
 
 function shouldRetryByStatus(status: number): boolean {
-  return status === 525 || status === 526
+  return status === 525 || status === 526 || status === 530
 }
 
 function shouldRetryByResponse(response: Response): boolean {
