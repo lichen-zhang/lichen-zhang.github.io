@@ -1,39 +1,17 @@
-interface Env {
-  BIZ_API_BASE_URL?: string
-  BIZ_API_FALLBACK_BASE_URL?: string
-  BIZ_API_IP_FALLBACK_BASE_URL?: string
-  BIZ_API_IP_FALLBACK_HOST_HEADER?: string
-}
+const PRIMARY_BIZ_BASE_URL = 'https://biz.stackout.work'
+const HTTP_DOWNGRADE_BIZ_BASE_URL = 'http://biz.stackout.work'
+const FALLBACK_BIZ_BASE_URL = 'http://origin-biz.stackout.work:8080'
+const FALLBACK_HOST_HEADER = '121.37.42.98'
 
-function buildTargetUrl(requestUrl: URL, env: Env): string {
-  const base = (env.BIZ_API_BASE_URL || 'https://biz.stackout.work').replace(/\/$/, '')
+function buildTargetUrl(requestUrl: URL, base: string): string {
+  const normalizedBase = base.replace(/\/$/, '')
   const mappedPath = requestUrl.pathname.replace(/^\/bizApi/, '/api')
-  return `${base}${mappedPath}${requestUrl.search}`
+  return `${normalizedBase}${mappedPath}${requestUrl.search}`
 }
 
-function buildFallbackTargetUrl(requestUrl: URL, env: Env): string | null {
-  if (!env.BIZ_API_FALLBACK_BASE_URL) return null
-  const base = env.BIZ_API_FALLBACK_BASE_URL.replace(/\/$/, '')
-  const mappedPath = requestUrl.pathname.replace(/^\/bizApi/, '/api')
-  return `${base}${mappedPath}${requestUrl.search}`
-}
-
-function buildIpFallbackTargetUrl(requestUrl: URL, env: Env): string {
-  const configured = env.BIZ_API_IP_FALLBACK_BASE_URL
-  const base = (configured || 'http://origin-biz.stackout.work:8080').replace(/\/$/, '')
-  const mappedPath = requestUrl.pathname.replace(/^\/bizApi/, '/api')
-  return `${base}${mappedPath}${requestUrl.search}`
-}
-
-function getHostOverrideForTarget(targetUrl: string, env: Env): string | null {
-  const ipFallbackBase = (env.BIZ_API_IP_FALLBACK_BASE_URL || 'http://origin-biz.stackout.work:8080').replace(/\/$/, '')
-  if (!targetUrl.startsWith(ipFallbackBase)) return null
-  return env.BIZ_API_IP_FALLBACK_HOST_HEADER || '121.37.42.98'
-}
-
-function buildHttpDowngradeUrl(targetUrl: string): string | null {
-  if (!targetUrl.startsWith('https://')) return null
-  return targetUrl.replace(/^https:/, 'http:')
+function getHostOverrideForTarget(targetUrl: string): string | null {
+  if (!targetUrl.startsWith(FALLBACK_BIZ_BASE_URL)) return null
+  return FALLBACK_HOST_HEADER
 }
 
 function shouldRetryByStatus(status: number): boolean {
@@ -80,10 +58,9 @@ async function forwardRequest(
   })
 }
 
-export const onRequest = async (context: { request: Request; env: Env }) => {
-  const { request, env } = context
+export const onRequest = async (context: { request: Request }) => {
+  const { request } = context
   const requestUrl = new URL(request.url)
-  const targetUrl = buildTargetUrl(requestUrl, env)
 
   if (request.method === 'OPTIONS') {
     return new Response(null, {
@@ -101,10 +78,9 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
     : await request.arrayBuffer()
 
   const candidateTargets = uniqueTargets([
-    targetUrl,
-    buildFallbackTargetUrl(requestUrl, env),
-    buildHttpDowngradeUrl(targetUrl),
-    buildIpFallbackTargetUrl(requestUrl, env),
+    buildTargetUrl(requestUrl, PRIMARY_BIZ_BASE_URL),
+    buildTargetUrl(requestUrl, HTTP_DOWNGRADE_BIZ_BASE_URL),
+    buildTargetUrl(requestUrl, FALLBACK_BIZ_BASE_URL),
   ])
 
   let upstreamResponse: Response | null = null
@@ -112,7 +88,7 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
 
   for (const candidate of candidateTargets) {
     try {
-      const hostOverride = getHostOverrideForTarget(candidate, env)
+      const hostOverride = getHostOverrideForTarget(candidate)
       const response = await forwardRequest(request, requestUrl, candidate, hostOverride, bodyBuffer)
       if (shouldRetryByResponse(response) && candidate !== candidateTargets[candidateTargets.length - 1]) {
         continue
