@@ -25,6 +25,13 @@ function shouldRetryByStatus(status: number): boolean {
   return status === 525 || status === 526
 }
 
+function shouldRetryByResponse(response: Response): boolean {
+  if (shouldRetryByStatus(response.status)) return true
+  if (response.status !== 403) return false
+  const contentType = (response.headers.get('content-type') || '').toLowerCase()
+  return contentType.includes('text/html')
+}
+
 function uniqueTargets(targets: Array<string | null | undefined>): string[] {
   const seen = new Set<string>()
   const result: string[] = []
@@ -89,7 +96,7 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
   for (const candidate of candidateTargets) {
     try {
       const response = await forwardRequest(request, requestUrl, candidate, bodyBuffer)
-      if (shouldRetryByStatus(response.status) && candidate !== candidateTargets[candidateTargets.length - 1]) {
+      if (shouldRetryByResponse(response) && candidate !== candidateTargets[candidateTargets.length - 1]) {
         continue
       }
       upstreamResponse = response
