@@ -111,14 +111,14 @@ pnpm run dev:all
 
 ```bash
 VITE_AI_GATEWAY_BASE_URL=https://api.stackout.work
-VITE_BIZ_API_BASE_URL=https://stackout.work/api
+VITE_BIZ_API_BASE_URL=https://biz.stackout.work/api
 ```
 
 其中：
 
 - `VITE_AI_GATEWAY_BASE_URL` 仅用于 AI 直连。
-- `VITE_BIZ_API_BASE_URL` 用于登录与全部业务接口（`/api/*`），生产建议配置为主站同域 `/api` 入口（例如 `https://stackout.work/api`），再由站点入口层反代到独立业务后端。
-- 若未显式配置 `VITE_BIZ_API_BASE_URL`，前端生产构建默认回退为同域 `/api`。
+- `VITE_BIZ_API_BASE_URL` 用于登录与全部业务接口（`/api/*`），生产默认建议直连 `https://biz.stackout.work/api`。
+- 前端开发态统一使用 `/bizApi` 前缀，并由 Vite 代理重写转发到后端 `/api/*`。
 
 说明：
 
@@ -137,6 +137,6 @@ VITE_BIZ_API_BASE_URL=https://stackout.work/api
 TEST_EMAIL=you@example.com pnpm run smoke:email-auth
 ```
 
-- 可选：`WORKER_BASE_URL`（默认 `https://stackout.work/api`）
+- 可选：`WORKER_BASE_URL`（默认 `https://biz.stackout.work`）
 - 可选：`EMAIL_AUTH_BASE_URL`（默认 `https://mail.stackout.work`）
 - 可选：`TEST_CODE`（未提供时会优先使用 send-code 返回的 `debugCode`）

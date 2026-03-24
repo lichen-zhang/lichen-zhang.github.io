@@ -10,7 +10,7 @@ const proxySecure = process.env.VITE_BIZ_PROXY_SECURE
   : defaultProxySecure
 
 export default defineConfig(() => {
-  console.log(`[vite] /api proxy target: ${proxyTarget}, secure: ${proxySecure}`)
+  console.log(`[vite] /bizApi proxy target: ${proxyTarget}, secure: ${proxySecure}`)
 
   return {
     plugins: [vue()],
@@ -21,10 +21,11 @@ export default defineConfig(() => {
     },
     server: {
       proxy: {
-        '/api': {
+        '/bizApi': {
           target: proxyTarget,
           changeOrigin: true,
           secure: proxySecure,
+          rewrite: (path) => path.replace(/^\/bizApi/, '/api'),
           configure: (proxy) => {
             proxy.on('proxyReq', (proxyReq) => {
               proxyReq.removeHeader('origin')

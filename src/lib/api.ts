@@ -1,10 +1,9 @@
 import axios from 'axios'
 
 const baseURL = import.meta.env.DEV
-  ? '/api'
+  ? '/bizApi'
   : import.meta.env.VITE_BIZ_API_BASE_URL ||
-    import.meta.env.VITE_API_BASE_URL ||
-    '/api'
+    'https://biz.stackout.work/api'
 
 export const api = axios.create({
   baseURL,
