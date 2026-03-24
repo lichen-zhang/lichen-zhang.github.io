@@ -1,6 +1,7 @@
 interface Env {
   BIZ_API_BASE_URL?: string
   BIZ_API_FALLBACK_BASE_URL?: string
+  BIZ_API_IP_FALLBACK_BASE_URL?: string
 }
 
 function buildTargetUrl(requestUrl: URL, env: Env): string {
@@ -12,6 +13,13 @@ function buildTargetUrl(requestUrl: URL, env: Env): string {
 function buildFallbackTargetUrl(requestUrl: URL, env: Env): string | null {
   if (!env.BIZ_API_FALLBACK_BASE_URL) return null
   const base = env.BIZ_API_FALLBACK_BASE_URL.replace(/\/$/, '')
+  const mappedPath = requestUrl.pathname.replace(/^\/bizApi/, '/api')
+  return `${base}${mappedPath}${requestUrl.search}`
+}
+
+function buildIpFallbackTargetUrl(requestUrl: URL, env: Env): string {
+  const configured = env.BIZ_API_IP_FALLBACK_BASE_URL
+  const base = (configured || 'http://121.37.42.98:8080').replace(/\/$/, '')
   const mappedPath = requestUrl.pathname.replace(/^\/bizApi/, '/api')
   return `${base}${mappedPath}${requestUrl.search}`
 }
@@ -88,6 +96,7 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
     targetUrl,
     buildFallbackTargetUrl(requestUrl, env),
     buildHttpDowngradeUrl(targetUrl),
+    buildIpFallbackTargetUrl(requestUrl, env),
   ])
 
   let upstreamResponse: Response | null = null
