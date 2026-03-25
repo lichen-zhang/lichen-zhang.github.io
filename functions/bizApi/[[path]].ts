@@ -1,4 +1,4 @@
-const PRIMARY_BIZ_BASE_URL = 'https://stackout.work'
+const PRIMARY_BIZ_BASE_URL = 'http://origin-biz.stackout.work:8080'
 
 function buildTargetUrl(requestUrl: URL, base: string): string {
   const normalizedBase = base.replace(/\/$/, '')
