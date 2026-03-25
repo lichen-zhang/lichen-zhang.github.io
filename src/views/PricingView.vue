@@ -100,6 +100,9 @@
           class="mx-auto w-full max-w-[320px] rounded-lg border border-[var(--line)] bg-white object-contain"
         />
       </div>
+      <p v-if="isUsingDefaultQr" class="mt-2 rounded-md bg-amber-50 p-2 text-xs text-amber-700">
+        当前未配置 VITE_WECHAT_PAY_QR_IMAGE_URL，正在使用默认二维码地址；建议尽快在前端环境变量中配置你的服务器图片地址。
+      </p>
       <p class="mt-2 text-xs text-[var(--muted)]">若二维码未显示，请检查环境变量 VITE_WECHAT_PAY_QR_IMAGE_URL 是否为可访问的服务器图片地址。</p>
     </article>
 
@@ -127,6 +130,7 @@ const plans: Array<{ code: PlanCode | 'free'; name: string; price: string; desc:
 const currentPlanLabel = computed(() => formatPlanLabel(auth.user?.plan_type || 'free'))
 const hasActivePro = computed(() => auth.user?.plan_type === 'pro')
 const paymentQrImageUrl = computed(() => String(billing.latestPayment?.paymentParams?.qrImageUrl || ''))
+const isUsingDefaultQr = computed(() => Boolean(billing.latestPayment?.paymentParams?.isUsingDefaultQr))
 const currentPlanHint = computed(() => {
   if (!auth.user) return ''
   if (hasActivePro.value) {

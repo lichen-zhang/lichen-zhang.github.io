@@ -5,6 +5,7 @@ import { getApiErrorMessage } from '../lib/error'
 import type { CreatePaymentResponse, OrderItem, OrdersResponse, PlanCode } from '../types/api'
 
 const WECHAT_PAY_QR_IMAGE_URL = String(import.meta.env.VITE_WECHAT_PAY_QR_IMAGE_URL || '').trim()
+const DEFAULT_WECHAT_PAY_QR_IMAGE_URL = new URL('../assets/wechat-pay-qr.jpg', import.meta.url).href
 
 function getErrorMessage(err: unknown, fallback: string): string {
   return getApiErrorMessage(err, fallback)
@@ -20,15 +21,14 @@ export const useBillingStore = defineStore('billing', () => {
     loading.value = true
     error.value = null
     try {
-      if (!WECHAT_PAY_QR_IMAGE_URL) {
-        throw new Error('未配置 VITE_WECHAT_PAY_QR_IMAGE_URL，请先配置服务器二维码图片地址')
-      }
+      const qrImageUrl = WECHAT_PAY_QR_IMAGE_URL || DEFAULT_WECHAT_PAY_QR_IMAGE_URL
       const data: CreatePaymentResponse = {
         orderId: `manual_${Date.now()}`,
         paymentParams: {
           mode: 'wechat_qr_image',
           planCode,
-          qrImageUrl: WECHAT_PAY_QR_IMAGE_URL,
+          qrImageUrl,
+          isUsingDefaultQr: !WECHAT_PAY_QR_IMAGE_URL,
           createdAt: new Date().toISOString(),
         },
       }
