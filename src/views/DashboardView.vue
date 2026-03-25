@@ -129,29 +129,32 @@
           <button
             :disabled="store.loading || !form.topic.trim()"
             @click="onGenerateTopics"
-            class="rounded-lg bg-slate-800 px-3 py-2 text-sm text-white disabled:opacity-40"
+            class="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-800 px-3 py-2 text-sm text-white disabled:opacity-40"
           >
+            <span v-if="generatingStep === 'topics'" class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/35 border-t-white"></span>
             {{ generatingStep === 'topics' ? '1. 正在生成选题...' : '1. 生成选题' }}
           </button>
           <button
             :disabled="store.loading || !selectedTopic"
             @click="onGenerateArticle"
-            class="rounded-lg bg-slate-800 px-3 py-2 text-sm text-white disabled:opacity-40"
+            class="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-800 px-3 py-2 text-sm text-white disabled:opacity-40"
           >
+            <span v-if="generatingStep === 'article'" class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/35 border-t-white"></span>
             {{ generatingStep === 'article' ? '2. 正在生成正文...' : '2. 生成正文' }}
           </button>
           <button
             :disabled="store.loading || !store.article"
             @click="onGenerateTitles"
-            class="rounded-lg bg-slate-800 px-3 py-2 text-sm text-white disabled:opacity-40"
+            class="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-800 px-3 py-2 text-sm text-white disabled:opacity-40"
           >
+            <span v-if="generatingStep === 'titles'" class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/35 border-t-white"></span>
             {{ generatingStep === 'titles' ? '3. 正在生成标题...' : '3. 生成标题' }}
           </button>
         </div>
 
         <div v-if="store.loading" class="mt-4 rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm">
           <div class="flex items-center gap-3 text-[var(--text)]">
-            <span class="inline-flex h-2.5 w-2.5 animate-pulse rounded-full bg-[var(--brand)]"></span>
+            <span class="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-[var(--brand)]/35 border-t-[var(--brand)]"></span>
             <p class="font-semibold">{{ loadingTitle }}</p>
           </div>
           <p class="mt-2 text-xs text-[var(--muted)]">请稍候，生成完成后结果区会自动刷新。</p>
@@ -294,6 +297,7 @@
         </div>
       </article>
     </div>
+
   </section>
 </template>
 
@@ -576,4 +580,5 @@ async function copySelectedTitle() {
 .article-editor--expanded :deep(.ql-container) {
   min-height: calc(100vh - 280px);
 }
+
 </style>

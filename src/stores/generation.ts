@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { AxiosError } from 'axios'
 import { api } from '../lib/api'
+import { getApiErrorMessage } from '../lib/error'
 import type {
   GenerateArticleRequest,
   GenerateArticleResponse,
@@ -44,8 +45,7 @@ interface ComposeDraft {
 function getErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof AxiosError) {
     const status = err.response?.status
-    const data = err.response?.data as { error?: string } | undefined
-    const message = data?.error || err.message || fallback
+    const message = getApiErrorMessage(err, fallback)
     if (status === 429 && message.includes('今日免费额度已用完')) {
       return '今日免费额度已用完。免费版每天 3 次，仅生成选题成功时扣减。请明天再试或前往套餐页升级。'
     }
@@ -57,8 +57,27 @@ function getErrorMessage(err: unknown, fallback: string): string {
     }
     return message
   }
-  if (err instanceof Error) return err.message || fallback
-  return fallback
+  return getApiErrorMessage(err, fallback)
+}
+
+function normalizeTextArray(input: unknown, max = 10): string[] {
+  if (!Array.isArray(input)) return []
+  return input
+    .map((item) => {
+      if (typeof item === 'string') return item.trim()
+      if (typeof item === 'number' || typeof item === 'boolean') return String(item)
+      if (item && typeof item === 'object') {
+        const record = item as Record<string, unknown>
+        const preferredKeys = ['title', 'topic', 'name', 'text', 'content', 'value']
+        for (const key of preferredKeys) {
+          const value = record[key]
+          if (typeof value === 'string' && value.trim()) return value.trim()
+        }
+      }
+      return ''
+    })
+    .filter(Boolean)
+    .slice(0, max)
 }
 
 export const useGenerationStore = defineStore('generation', () => {
@@ -98,7 +117,7 @@ export const useGenerationStore = defineStore('generation', () => {
     error.value = null
     try {
       const { data } = await api.post<GenerateTopicsResponse>('/generate/topics', payload)
-      topics.value = data.topics
+      topics.value = normalizeTextArray(data.topics)
       workflowId.value = data.workflowId
 
       if (auth.user) {
@@ -136,7 +155,7 @@ export const useGenerationStore = defineStore('generation', () => {
     error.value = null
     try {
       const { data } = await api.post<GenerateTitlesResponse>('/generate/titles', payload)
-      titles.value = data.titles
+      titles.value = normalizeTextArray(data.titles)
       return data
     } catch (err: unknown) {
       error.value = getErrorMessage(err, '生成标题失败')

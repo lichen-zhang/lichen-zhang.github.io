@@ -1,30 +1,11 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { AxiosError } from 'axios'
 import { api } from '../lib/api'
+import { getApiErrorMessage } from '../lib/error'
 import type { LoginResponse, MeResponse, SendCodeRequest, SendCodeResponse, User } from '../types/api'
 
 const TOKEN_KEY = 'xhs_writer_token'
 const USER_KEY = 'xhs_writer_user'
-
-function getErrorMessage(err: unknown, fallback: string): string {
-  if (err instanceof AxiosError) {
-    const raw = err.response?.data as { error?: string; message?: string } | string | undefined
-    let data: { error?: string; message?: string } | undefined
-    if (typeof raw === 'string') {
-      try {
-        data = JSON.parse(raw) as { error?: string; message?: string }
-      } catch {
-        data = { message: raw }
-      }
-    } else {
-      data = raw
-    }
-    return data?.message || data?.error || err.message || fallback
-  }
-  if (err instanceof Error) return err.message || fallback
-  return fallback
-}
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem(TOKEN_KEY))
@@ -68,7 +49,7 @@ export const useAuthStore = defineStore('auth', () => {
       const { data } = await api.post<SendCodeResponse>('/auth/send-code', payload)
       return data
     } catch (err: unknown) {
-      error.value = getErrorMessage(err, '发送验证码失败')
+      error.value = getApiErrorMessage(err, '发送验证码失败')
       throw err
     } finally {
       loading.value = false
@@ -83,7 +64,7 @@ export const useAuthStore = defineStore('auth', () => {
       persistToken(data.token)
       setUser(data.user)
     } catch (err: unknown) {
-      error.value = getErrorMessage(err, '登录失败')
+      error.value = getApiErrorMessage(err, '登录失败')
       throw err
     } finally {
       loading.value = false
@@ -99,7 +80,7 @@ export const useAuthStore = defineStore('auth', () => {
       setUser(data.user)
       return data.user
     } catch (err: unknown) {
-      const message = getErrorMessage(err, '获取用户信息失败')
+      const message = getApiErrorMessage(err, '获取用户信息失败')
       error.value = message
       clearSession()
       return null

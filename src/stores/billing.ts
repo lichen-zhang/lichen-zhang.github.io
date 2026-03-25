@@ -1,16 +1,11 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { AxiosError } from 'axios'
 import { api } from '../lib/api'
+import { getApiErrorMessage } from '../lib/error'
 import type { CreatePaymentResponse, OrderItem, OrdersResponse, PlanCode } from '../types/api'
 
 function getErrorMessage(err: unknown, fallback: string): string {
-  if (err instanceof AxiosError) {
-    const data = err.response?.data as { error?: string } | undefined
-    return data?.error || err.message || fallback
-  }
-  if (err instanceof Error) return err.message || fallback
-  return fallback
+  return getApiErrorMessage(err, fallback)
 }
 
 export const useBillingStore = defineStore('billing', () => {
