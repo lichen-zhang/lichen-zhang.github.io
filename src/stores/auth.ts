@@ -9,8 +9,18 @@ const USER_KEY = 'xhs_writer_user'
 
 function getErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof AxiosError) {
-    const data = err.response?.data as { error?: string } | undefined
-    return data?.error || err.message || fallback
+    const raw = err.response?.data as { error?: string; message?: string } | string | undefined
+    let data: { error?: string; message?: string } | undefined
+    if (typeof raw === 'string') {
+      try {
+        data = JSON.parse(raw) as { error?: string; message?: string }
+      } catch {
+        data = { message: raw }
+      }
+    } else {
+      data = raw
+    }
+    return data?.message || data?.error || err.message || fallback
   }
   if (err instanceof Error) return err.message || fallback
   return fallback

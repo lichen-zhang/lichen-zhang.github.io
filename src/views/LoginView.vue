@@ -82,6 +82,7 @@ async function sendCode() {
 }
 
 async function login() {
+  sendSuccess.value = false
   await auth.loginByCode(email.value, code.value)
   const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
   await router.push(redirect)
