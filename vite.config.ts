@@ -2,15 +2,10 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-const defaultProxyTarget = 'https://121.37.42.98'
-const defaultProxySecure = false
-const proxyTarget = process.env.VITE_BIZ_PROXY_TARGET || defaultProxyTarget
-const proxySecure = process.env.VITE_BIZ_PROXY_SECURE
-  ? process.env.VITE_BIZ_PROXY_SECURE === 'true'
-  : defaultProxySecure
+const proxyTarget = 'https://stackout.work'
 
 export default defineConfig(() => {
-  console.log(`[vite] /bizApi proxy target: ${proxyTarget}, secure: ${proxySecure}`)
+  console.log(`[vite] /bizApi proxy target: ${proxyTarget}`)
 
   return {
     plugins: [vue()],
@@ -24,8 +19,7 @@ export default defineConfig(() => {
         '/bizApi': {
           target: proxyTarget,
           changeOrigin: true,
-          secure: proxySecure,
-          rewrite: (path) => path.replace(/^\/bizApi/, '/api'),
+          secure: true,
           configure: (proxy) => {
             proxy.on('proxyReq', (proxyReq) => {
               proxyReq.removeHeader('origin')

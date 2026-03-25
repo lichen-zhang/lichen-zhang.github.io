@@ -15,12 +15,12 @@
 
 1. Web 前端（当前目录）
 2. 邮箱验证码后端（`email-auth-backend/`）
-3. 网关 Worker（线上由 Cloudflare 官网手工维护，不以本仓库源码为准）
+3. 网关 Worker 与业务边缘函数（线上由 Cloudflare 官网/Pages 维护，不以单一仓库源码为准）
 
 对应文档：
 
 - 主项目说明：当前文件
-- Cloudflare Worker 线上备份：`../docs/Cloudflare线上Worker备份.md`
+- Cloudflare 线上备份：`../docs/Cloudflare线上Worker备份.md`
 - 邮箱后端说明：`../email-auth-backend/README.md`
 - 网关 Worker 说明：`../docs/网关服务说明.md`
 - 一体化部署操作说明书：`../docs/部署操作手册.md`
@@ -32,7 +32,7 @@
 
 - Frontend: Vue 3 + Vite + TypeScript + Pinia + Vue Router + TailwindCSS + Axios
 - Backend: 独立业务后端 + 邮箱验证码后端
-- Gateway: Cloudflare Worker（线上手工维护）
+- Gateway: Cloudflare Worker + Pages Functions（线上手工维护）
 - AI: Kimi（选题/正文/标题）
 
 ## 页面路由
@@ -46,19 +46,19 @@
 
 ## API
 
-业务后端对外 API（`/api/*`）：
+业务后端对外 API（`/bizApi/*`）：
 
-- `POST /api/auth/send-code`
-- `POST /api/auth/login`
-- `GET /api/auth/me`
-- `POST /api/generate/topics`
-- `POST /api/generate/article`
-- `POST /api/generate/titles`
-- `GET /api/history`
-- `GET /api/history/:id`
-- `POST /api/payment/create`
-- `POST /api/payment/callback`
-- `GET /api/orders`
+- `POST /bizApi/auth/send-code`
+- `POST /bizApi/auth/login`
+- `GET /bizApi/auth/me`
+- `POST /bizApi/generate/topics`
+- `POST /bizApi/generate/article`
+- `POST /bizApi/generate/titles`
+- `GET /bizApi/history`
+- `GET /bizApi/history/:id`
+- `POST /bizApi/payment/create`
+- `POST /bizApi/payment/callback`
+- `GET /bizApi/orders`
 
 网关 Worker API（`/v1/*`，`api.stackout.work`）：
 
@@ -76,8 +76,8 @@
 认证说明：
 
 - 登录改为邮箱验证码。
-- 前端请求主站同域 `/api/auth/send-code` 与 `/api/auth/login`。
-- `/api/*` 最终由站点入口层或 Cloudflare 线上 Worker 转发到独立业务后端。
+- 前端请求主站同域 `/bizApi/auth/send-code` 与 `/bizApi/auth/login`。
+- `/bizApi/*` 最终由 Cloudflare Pages Functions / Worker 承接。
 
 ## 本地开发
 
@@ -100,12 +100,12 @@ pnpm run dev:all
 - Cloudflare `worker.js` 以官网登录控制台中的手工版本为准。
 - 本仓库不再承载可直接部署的 Worker 源码；仅在 `../docs/Cloudflare线上Worker备份.md` 保留备份。
 
-### 前端直连生成（不走 /api/generate/*）
+### 前端直连生成（不走 /bizApi/generate/*）
 
 当前 Dashboard 的“选题/正文/标题生成”已切换为前端直连：
 
 - `POST https://api.stackout.work/v1/chat/completions`
-- 不再调用：`/api/generate/topics`、`/api/generate/article`、`/api/generate/titles`
+- 不再调用：`/bizApi/generate/topics`、`/bizApi/generate/article`、`/bizApi/generate/titles`
 
 前端需要配置：
 
@@ -117,8 +117,8 @@ VITE_BIZ_API_BASE_URL=/bizApi
 其中：
 
 - `VITE_AI_GATEWAY_BASE_URL` 仅用于 AI 直连。
-- `VITE_BIZ_API_BASE_URL` 用于登录与全部业务接口，生产建议统一配置为 `/bizApi`。
-- 前端开发态统一使用 `/bizApi` 前缀，并由 Vite 代理重写转发到后端 `/api/*`；生产由 Cloudflare Worker 将 `/bizApi/*` 转发到华为云 biz 后端。
+- `VITE_BIZ_API_BASE_URL` 用于登录与全部业务接口，生产统一配置为 `/bizApi`。
+- 前端开发态统一使用 `/bizApi` 前缀，并由 Vite 代理转发到 Cloudflare 业务边缘；生产由 Cloudflare Pages Functions / Worker 将 `/bizApi/*` 承接。
 
 说明：
 
@@ -138,5 +138,5 @@ TEST_EMAIL=you@example.com pnpm run smoke:email-auth
 ```
 
 - 可选：`WORKER_BASE_URL`（默认 `https://stackout.work/bizApi`）
-- 可选：`EMAIL_AUTH_BASE_URL`（默认 `https://mail.stackout.work`）
+- 可选：`EMAIL_AUTH_BASE_URL`（迁移期默认 `https://mail.stackout.work`）
 - 可选：`TEST_CODE`（未提供时会优先使用 send-code 返回的 `debugCode`）
