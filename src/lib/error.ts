@@ -20,6 +20,19 @@ function normalizeApiErrorPayload(raw: unknown): ApiErrorPayload {
 }
 
 export function getApiErrorMessage(err: unknown, fallback: string): string {
+  const maybeAxiosLike = err as {
+    message?: unknown
+    response?: {
+      data?: unknown
+    }
+  }
+
+  if (maybeAxiosLike?.response) {
+    const payload = normalizeApiErrorPayload(maybeAxiosLike.response.data)
+    const message = typeof maybeAxiosLike.message === 'string' ? maybeAxiosLike.message : ''
+    return payload.message || payload.error || message || fallback
+  }
+
   if (err instanceof AxiosError) {
     const payload = normalizeApiErrorPayload(err.response?.data)
     return payload.message || payload.error || err.message || fallback

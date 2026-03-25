@@ -46,7 +46,7 @@ function getErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof AxiosError) {
     const status = err.response?.status
     const message = getApiErrorMessage(err, fallback)
-    if (status === 429 && message.includes('今日免费额度已用完')) {
+    if (status === 429) {
       return '今日免费额度已用完。免费版每天 3 次，仅生成选题成功时扣减。请明天再试或前往套餐页升级。'
     }
     if (status === 403 && message.includes('请先完成选题生成')) {
