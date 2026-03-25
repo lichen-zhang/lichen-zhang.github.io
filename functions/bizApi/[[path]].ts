@@ -62,6 +62,20 @@ export const onRequest = async (context: { request: Request }) => {
   const { request } = context
   const requestUrl = new URL(request.url)
 
+  if (requestUrl.pathname === '/bizApi/health' || requestUrl.pathname === '/bizApi/health/') {
+    return new Response(JSON.stringify({
+      ok: true,
+      service: 'biz-edge',
+      timestamp: new Date().toISOString(),
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store',
+      },
+    })
+  }
+
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
