@@ -112,12 +112,14 @@ pnpm run dev:all
 ```bash
 VITE_AI_GATEWAY_BASE_URL=https://api.stackout.work
 VITE_BIZ_API_BASE_URL=/bizApi
+VITE_WECHAT_PAY_QR_IMAGE_URL=https://stackout.work/assets/wechat-pay-qr.png
 ```
 
 其中：
 
 - `VITE_AI_GATEWAY_BASE_URL` 仅用于 AI 直连。
 - `VITE_BIZ_API_BASE_URL` 用于登录与全部业务接口，生产统一配置为 `/bizApi`。
+- `VITE_WECHAT_PAY_QR_IMAGE_URL` 用于套餐页微信支付二维码图片地址（建议放到你的服务器静态资源路径）。
 - 前端开发态统一使用 `/bizApi` 前缀，并由 Vite 代理转发到 Cloudflare 业务边缘；生产由 Cloudflare Pages Functions / Worker 将 `/bizApi/*` 承接。
 
 说明：

@@ -4,7 +4,7 @@
       <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <h2 class="text-xl font-bold">套餐页</h2>
-          <p class="mt-1 text-sm text-[var(--muted)]">按当前账号状态选择套餐，购买结果以后端回调和账户页为准。</p>
+          <p class="mt-1 text-sm text-[var(--muted)]">按当前账号状态选择套餐，当前使用微信二维码图片收款，支付后请在账户页确认套餐状态。</p>
         </div>
         <div v-if="auth.user" class="rounded-xl bg-white px-4 py-3 text-sm text-[var(--text)] md:max-w-[320px]">
           <p class="font-semibold">当前套餐：{{ currentPlanLabel }}</p>
@@ -74,7 +74,7 @@
       <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <p class="font-semibold text-[var(--text)]">购买后查看位置</p>
-          <p class="mt-1 text-[var(--muted)]">订单状态、套餐到期时间和当前额度会同步展示在账户页；如已创建订单，可先完成支付再刷新账户页确认。</p>
+          <p class="mt-1 text-[var(--muted)]">请扫码完成支付后，前往账户页查看套餐状态、到期时间与额度变化。</p>
         </div>
         <RouterLink to="/account" class="w-full rounded-lg border border-[var(--line)] px-3 py-2 text-center text-sm text-[var(--text)] md:w-auto">
           前往账户页
@@ -87,14 +87,20 @@
       <div class="mt-3 space-y-3 text-[var(--muted)]">
         <p>1. 免费版适合先体验完整流程，包括选题、正文、标题和历史记录联动。</p>
         <p>2. Pro 适合高频创作场景，不再受免费版每日 3 次选题额度限制。</p>
-        <p>3. 创建订单后，支付状态以后端回调和账户页展示为准；若页面未及时刷新，可进入账户页手动刷新。</p>
+        <p>3. 点击微信支付后会展示收款二维码图片，请使用微信扫码支付。</p>
       </div>
     </article>
 
     <article v-if="billing.latestPayment" class="rounded-2xl border border-[var(--line)] bg-white p-4 text-sm sm:p-5">
-      <p class="font-semibold text-[var(--text)]">订单已创建：{{ billing.latestPayment.orderId }}</p>
-      <pre class="mt-2 overflow-x-auto rounded-lg bg-slate-50 p-3 text-xs">{{ formatPaymentParams(billing.latestPayment.paymentParams) }}</pre>
-      <p class="mt-2 text-xs text-[var(--muted)]">生产环境请拉起微信支付 SDK，支付状态以后端回调为准。</p>
+      <p class="font-semibold text-[var(--text)]">请使用微信扫码支付（订单号：{{ billing.latestPayment.orderId }}）</p>
+      <div class="mt-3 rounded-xl border border-[var(--line)] bg-[var(--panel)] p-3">
+        <img
+          :src="paymentQrImageUrl"
+          alt="微信支付收款码"
+          class="mx-auto w-full max-w-[320px] rounded-lg border border-[var(--line)] bg-white object-contain"
+        />
+      </div>
+      <p class="mt-2 text-xs text-[var(--muted)]">若二维码未显示，请检查环境变量 VITE_WECHAT_PAY_QR_IMAGE_URL 是否为可访问的服务器图片地址。</p>
     </article>
 
     <p v-if="billing.error" class="rounded-lg bg-red-50 p-3 text-sm text-red-700">{{ billing.error }}</p>
@@ -120,6 +126,7 @@ const plans: Array<{ code: PlanCode | 'free'; name: string; price: string; desc:
 
 const currentPlanLabel = computed(() => formatPlanLabel(auth.user?.plan_type || 'free'))
 const hasActivePro = computed(() => auth.user?.plan_type === 'pro')
+const paymentQrImageUrl = computed(() => String(billing.latestPayment?.paymentParams?.qrImageUrl || ''))
 const currentPlanHint = computed(() => {
   if (!auth.user) return ''
   if (hasActivePro.value) {
@@ -165,7 +172,7 @@ function planActionHint(plan: (typeof plans)[number]) {
   if (!auth.isLoggedIn) return '未登录时不允许创建订单。'
   if (plan.code === 'free') return '可先体验工作台、历史页与额度规则。'
   if (hasActivePro.value) return '当前账号已是 Pro，续费前请先到账户页确认到期时间。'
-  return '订单创建后会返回支付参数，支付完成以回调和账户页展示为准。'
+  return '点击后直接展示微信收款码图片，扫码支付即可。'
 }
 
 function planPrimaryFeature(plan: (typeof plans)[number]) {
@@ -178,10 +185,6 @@ function planSecondaryFeature(plan: (typeof plans)[number]) {
   if (plan.code === 'free') return '支持历史参考、工作台和账户页联动'
   if (plan.code === 'pro_month') return '开通后不再受免费版每日 3 次限制'
   return '季度更省，减少频繁续费操作'
-}
-
-function formatPaymentParams(payload: Record<string, unknown>) {
-  return JSON.stringify(payload, null, 2)
 }
 
 onMounted(async () => {
